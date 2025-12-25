@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Upload + D3 Plot</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <script type="text/javascript" src="/js/dot_plot.js"></script>
+    <script type="text/javascript" src="/js/csv_parser.js"></script>
+
+    <style>
+        svg {
+            background: #f7f7f7;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload CSV → Parse First 5 Rows → Convert Time → Plot</h1>
+    
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept=".csv" required />
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="message"></div>
+
+    <h2>D3 Plot (Unix Time vs Distance)</h2>
+    <div id="chart"></div>
+    <svg id="myPlot" style="width:1500px;height:1000px"></svg>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                messageDiv.innerHTML = `<p style="color:red;">Please select a CSV file.</p>`;
+                return;
+            }
+
+            parseCSV(file).then(
+                (e) => {
+                    drawDotPlot("#myPlot", e);
+                    // drawDotPlot("#anotherPlot", e);
+                }
+            )          
+            
+        });
+
+
+        
+
+    </script>
