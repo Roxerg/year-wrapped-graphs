@@ -2,16 +2,20 @@
 use rocket::http::Header;
 use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
+use rocket::response::content::RawXml;
 
 pub struct Cors;
 
 mod database;
+mod utils;
 use rocket::serde::json::Json;
-use database::{Activity, get_activities_by_year, save_strava_activities};
-
-use std::error::Error;
-use csv::ReaderBuilder;
-use chrono::NaiveDateTime;
+use database::{
+    Activity, 
+    get_activities_by_year, 
+    load_strava_main_file, 
+    get_activity_by_id
+};
+use utils::{get_file_list, get_gpx};
 
 #[rocket::async_trait]
 impl Fairing for Cors {
@@ -40,11 +44,42 @@ fn get_year(year: i32) -> Result<Json<Vec<Activity>>, String> {
     }
 }
 
+#[get("/activity/<activity_id>")]
+fn get_activity(activity_id: i64) -> Result<Json<Activity>, String> {
+    // Call the function we wrote earlier in db.rs
+    match get_activity_by_id(activity_id) {
+        Ok(activity) => Ok(Json(activity)),
+        Err(e) => Err(format!("Database error: {}", e)),
+    }
+}
+
+#[get("/activity/<activity_id>/gpx")]
+fn get_activity_gpx(activity_id: i64) -> Result<RawXml<String>, String> {
+    // Call the function we wrote earlier in db.rs
+    let act = get_activity_by_id(activity_id).unwrap();
+
+    let activities_dir = "/home/roxerg/Projects/year_wrapped/backend/strava_data_nov20_2025/activities";
+    match get_gpx(activities_dir, act.file_id) {
+        Ok(activity) => Ok(RawXml(activity)),
+        Err(e) => Err(format!("Database error: {}", e)),
+    }
+}
+
+
+
+
 #[launch]
 fn rocket() -> _ {
+
+    let _ = load_strava_main_file("/home/roxerg/Projects/year_wrapped/backend/strava_data_nov20_2025");
+
+    get_file_list("/home/roxerg/Projects/year_wrapped/backend/strava_data_nov20_2025/activities", ".gz");
+
     rocket::build()
         .attach(Cors) // Add this line!
         .mount("/", routes![get_year])
+        .mount("/", routes![get_activity])
+        .mount("/", routes![get_activity_gpx])
 }
 
 // 0 - Activity ID
@@ -141,23 +176,6 @@ fn rocket() -> _ {
 // 91 - Timer Time
 // 92 - Total Cycles
 
-
-fn parse_to_timestamp(date_str: &str) -> Option<i64> {
-    if date_str.is_empty() {
-        return None;
-    }
-
-    // Format: "Oct 30, 2022, 7:46:37 AM"
-    let format = "%b %d, %Y, %I:%M:%S %p";
-
-    match NaiveDateTime::parse_from_str(date_str, format) {
-        Ok(datetime) => Some(datetime.and_utc().timestamp()),
-        Err(e) => {
-            eprintln!("Parsing error for '{}': {}", date_str, e);
-            None
-        }
-    }
-}
 
 // fn run() -> Result<(), Box<dyn Error>> {
 //     let mut reader = ReaderBuilder::new()

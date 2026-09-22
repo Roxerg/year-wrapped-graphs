@@ -8,4 +8,6 @@ rocket = { version = "0.5.1", features = ["json"] }
 rusqlite = { version = "0.39.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 csv = "1.4.0"
+flate2 = "1.0"
 chrono = "0.4"
+fit2gpx = { git = "https://github.com/Roxerg/fit2gpx-rs.git"}
